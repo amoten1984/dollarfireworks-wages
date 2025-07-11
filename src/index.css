@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Encourage big, clean typography */
+body {
+  font-family: 'Inter', sans-serif;
+}
