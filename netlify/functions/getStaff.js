@@ -1,10 +1,9 @@
-
 import { Client } from "pg";
 
 export async function handler(event, context) {
-  const locationId = event.queryStringParameters.locationId;
-  if (!locationId) {
-    return { statusCode: 400, body: "Missing locationId" };
+  const staffId = event.queryStringParameters.staffId;
+  if (!staffId) {
+    return { statusCode: 400, body: "Missing staffId" };
   }
 
   const client = new Client({
@@ -15,15 +14,30 @@ export async function handler(event, context) {
   try {
     await client.connect();
     const res = await client.query(
-      "SELECT * FROM staff WHERE location_id = $1 ORDER BY name ASC",
-      [locationId]
+      `
+      SELECT
+        s.id,
+        s.name AS staff_name,
+        l.name AS location_name
+      FROM
+        staff s
+      LEFT JOIN
+        locations l ON s.location_id = l.id
+      WHERE
+        s.id = $1
+      `,
+      [staffId]
     );
     await client.end();
+
+    if (res.rows.length === 0) {
+      return { statusCode: 404, body: "Staff not found" };
+    }
 
     return {
       statusCode: 200,
       headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify(res.rows),
+      body: JSON.stringify(res.rows[0]),
     };
   } catch (error) {
     console.error("Database error:", error);
