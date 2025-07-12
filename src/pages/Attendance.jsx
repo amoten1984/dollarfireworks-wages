@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Home, ArrowLeft } from "lucide-react";
+import { generateWageStatement } from "./generateWageStatement";
 
 export default function Attendance() {
   const { staffId } = useParams();
@@ -35,15 +36,6 @@ export default function Attendance() {
   };
 
   const savePayment = async () => {
-    const helpersToSave = helpersInput === "" ? 0 : parseInt(helpersInput, 10);
-
-    console.log({
-      staffId,
-      season: determineSeason(),
-      totalAmount: parseFloat(paymentInput),
-      helpers: helpersToSave
-    });
-
     await fetch("/.netlify/functions/addPayment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -51,7 +43,7 @@ export default function Attendance() {
         staffId,
         season: determineSeason(),
         totalAmount: parseFloat(paymentInput),
-        helpers: helpersToSave
+        helpers: parseInt(helpersInput, 10) || 0
       }),
     });
     setEditMode(false);
@@ -73,33 +65,32 @@ export default function Attendance() {
   const avgPerHour = payment && totalHours > 0 ? (payment.total_amount / totalHours).toFixed(2) : 0;
   const avgPerDay = payment && totalDays > 0 ? (payment.total_amount / totalDays).toFixed(2) : 0;
 
-  const formatDateWithDay = (dateStr) => {
-    const date = new Date(dateStr);
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    const formattedDate = date.toLocaleDateString(undefined, options);
-    const dayOfWeek = date.toLocaleDateString(undefined, { weekday: "long" });
-    return `${formattedDate} (${dayOfWeek})`;
-  };
-
-  const updateHours = async (id, hours) => {
-    await fetch("/.netlify/functions/updateAttendance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, hoursWorked: hours }),
+  const exportPDF = () => {
+    generateWageStatement({
+      employeeName: payment?.staff_name || "Employee",
+      location: "Unknown Location",
+      season: determineSeason(),
+      totalHours,
+      totalDays,
+      wagesPaid: payment?.total_amount || 0,
+      helpers: helpers || 0,
+      avgPerHour,
+      avgPerDay,
+      paymentDate: new Date().toLocaleDateString(),
+      attendanceRecords: attendance.map((a) => ({
+        date: new Date(a.work_date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" }),
+        hours: a.hours_worked
+      }))
     });
-    fetchAttendance();
   };
 
   return (
     <div className="min-h-screen p-6 bg-gray-100 text-sm">
-
-      {/* Navigation */}
       <div className="flex items-center space-x-4 mb-4">
         <button onClick={() => navigate(-1)} className="hover:text-indigo-600"><ArrowLeft size={20} /></button>
         <Link to="/" className="hover:text-indigo-600"><Home size={20} /></Link>
       </div>
 
-      {/* Summary Box */}
       <div className="relative bg-white rounded-xl shadow-md p-4 mb-6 border">
         <div className="flex justify-between items-start">
           <div>
@@ -111,21 +102,26 @@ export default function Attendance() {
             <div>Avg $/Hour: <strong>${avgPerHour}</strong></div>
             <div>Avg $/Day: <strong>${avgPerDay}</strong></div>
           </div>
-
-          {/* Edit button */}
-          <button 
-            onClick={() => setEditMode(!editMode)}
-            className="text-xs text-indigo-600 border border-indigo-600 rounded px-2 py-1 hover:bg-indigo-50 transition"
-          >
-            {editMode ? "Close" : "Edit"}
-          </button>
+          <div className="flex flex-col items-end space-y-2">
+            <button 
+              onClick={() => setEditMode(!editMode)}
+              className="text-xs text-indigo-600 border border-indigo-600 rounded px-2 py-1 hover:bg-indigo-50 transition"
+            >
+              {editMode ? "Close" : "Edit"}
+            </button>
+            <button
+              onClick={exportPDF}
+              className="text-xs text-green-600 border border-green-600 rounded px-2 py-1 hover:bg-green-50 transition"
+            >
+              Export Statement
+            </button>
+          </div>
         </div>
 
-        {/* Editable fields */}
         {editMode && (
           <div className="mt-3 flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
-              <label>Wages Paid: </label>
+              <label>Wages Paid:</label>
               <input
                 type="number"
                 value={paymentInput}
@@ -134,7 +130,7 @@ export default function Attendance() {
               />
             </div>
             <div className="flex items-center space-x-2">
-              <label>Helpers: </label>
+              <label>Helpers:</label>
               <input
                 type="number"
                 value={helpersInput}
@@ -152,14 +148,13 @@ export default function Attendance() {
         )}
       </div>
 
-      {/* Attendance Records (only when editing) */}
       {editMode && (
         <>
           <h2 className="font-semibold mb-2 text-gray-700">Attendance Records:</h2>
           <ul className="space-y-1">
             {attendance.map((a) => (
               <li key={a.id} className="border p-2 rounded bg-white shadow-sm flex justify-between items-center">
-                <span>{formatDateWithDay(a.work_date)}</span>
+                <span>{new Date(a.work_date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" })}</span>
                 <input
                   type="number"
                   min="0"
