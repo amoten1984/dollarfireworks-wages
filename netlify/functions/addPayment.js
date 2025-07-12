@@ -2,6 +2,9 @@ import { Client } from "pg";
 
 export async function handler(event, context) {
   console.log("Incoming request body:", event.body);
+  console.error("Detailed DB error:", error);
+  console.error("Error code:", error.code);
+  console.error("Error detail:", error.detail);
   
   const { staffId, season, totalAmount, helpers } = JSON.parse(event.body);
   if (!staffId || !season || totalAmount == null || helpers == null) {
