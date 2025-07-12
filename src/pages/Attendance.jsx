@@ -5,6 +5,7 @@ export default function Attendance() {
   const { staffId } = useParams();
   const [attendance, setAttendance] = useState([]);
   const [payment, setPayment] = useState(null);
+  const [showAttendance, setShowAttendance] = useState(false);
 
   useEffect(() => {
     fetchAttendance();
@@ -46,44 +47,62 @@ export default function Attendance() {
     return `${formattedDate} (${dayOfWeek})`;
   };
 
+  const updateHours = async (id, hours) => {
+    await fetch("/.netlify/functions/updateAttendance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, hoursWorked: hours }),
+    });
+    fetchAttendance();
+  };
+
   return (
     <div className="min-h-screen p-4 bg-gray-50 text-sm">
-      <div className="mb-4">
-        <span className="inline-block px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-semibold">
-          {determineSeason()}
-        </span>
+      {/* Breadcrumb navigation */}
+      <div className="mb-4 space-x-4">
+        <Link to="/" className="text-blue-600 hover:underline">← Back to Home</Link>
+        <Link to="/locations" className="text-blue-600 hover:underline">← Back to Locations</Link>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-        <div className="bg-white rounded-xl shadow p-3 text-center">
-          <div className="text-xs text-gray-500">Total Hours</div>
-          <div className="font-bold text-lg">{totalHours}</div>
-        </div>
-        <div className="bg-white rounded-xl shadow p-3 text-center">
-          <div className="text-xs text-gray-500">Total Days</div>
-          <div className="font-bold text-lg">{totalDays}</div>
-        </div>
-        <div className="bg-white rounded-xl shadow p-3 text-center">
-          <div className="text-xs text-gray-500">Total Payment</div>
-          <div className="font-bold text-lg">${payment ? payment.total_amount : 0}</div>
-        </div>
-        <div className="bg-white rounded-xl shadow p-3 text-center">
-          <div className="text-xs text-gray-500">Avg $/Hour</div>
-          <div className="font-bold text-lg">${avgPerHour}</div>
-        </div>
-        <div className="bg-white rounded-xl shadow p-3 text-center">
-          <div className="text-xs text-gray-500">Avg $/Day</div>
-          <div className="font-bold text-lg">${avgPerDay}</div>
+      {/* Single summary card */}
+      <div
+        className="cursor-pointer bg-white rounded-xl shadow-md p-4 mb-6 hover:bg-gray-100 transition"
+        onClick={() => setShowAttendance(!showAttendance)}
+      >
+        <div className="font-bold text-blue-600 mb-2">{determineSeason()}</div>
+        <div className="space-y-1">
+          <div>Total Hours: <strong>{totalHours}</strong></div>
+          <div>Total Days: <strong>{totalDays}</strong></div>
+          <div>Total Payment: <strong>${payment ? payment.total_amount : 0}</strong></div>
+          <div>Avg $/Hour: <strong>${avgPerHour}</strong></div>
+          <div>Avg $/Day: <strong>${avgPerDay}</strong></div>
         </div>
       </div>
 
-      {/* Attendance records hidden from this summary page */}
-
-      <div className="mt-4">
-        <Link to="/locations" className="text-blue-600 hover:underline">
-          ← Back to Locations
-        </Link>
-      </div>
+      {/* Attendance details section (conditionally shown) */}
+      {showAttendance && (
+        <>
+          <h2 className="font-semibold mb-2">Attendance Records:</h2>
+          {attendance.length === 0 ? (
+            <div className="italic text-gray-500">No attendance yet.</div>
+          ) : (
+            <ul className="space-y-1">
+              {attendance.map((a) => (
+                <li key={a.id} className="border p-2 rounded bg-white shadow-sm flex justify-between items-center">
+                  <span>{formatDateWithDay(a.work_date)}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={a.hours_worked}
+                    onChange={(e) => updateHours(a.id, parseInt(e.target.value, 10))}
+                    className="border rounded p-1 w-20 text-right"
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
     </div>
   );
 }
