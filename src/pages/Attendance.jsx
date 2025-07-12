@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { Home, ArrowLeft } from "lucide-react"; // Optional icon library (or use emoji if you prefer)
 
 export default function Attendance() {
   const { staffId } = useParams();
+  const navigate = useNavigate();
   const [attendance, setAttendance] = useState([]);
   const [payment, setPayment] = useState(null);
+  const [paymentInput, setPaymentInput] = useState("");
   const [showAttendance, setShowAttendance] = useState(false);
 
   useEffect(() => {
@@ -21,7 +24,25 @@ export default function Attendance() {
   const fetchPayment = async () => {
     const res = await fetch(`/.netlify/functions/getPayment?staffId=${staffId}`);
     const data = await res.json();
-    if (data) setPayment(data);
+    if (data) {
+      setPayment(data);
+      setPaymentInput(data.total_amount);
+    }
+  };
+
+  const savePayment = async () => {
+    if (paymentInput && !isNaN(paymentInput)) {
+      await fetch("/.netlify/functions/addPayment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          staffId,
+          season: determineSeason(),
+          totalAmount: parseFloat(paymentInput)
+        }),
+      });
+      fetchPayment();
+    }
   };
 
   const totalHours = attendance.reduce((sum, rec) => sum + rec.hours_worked, 0);
@@ -58,15 +79,20 @@ export default function Attendance() {
 
   return (
     <div className="min-h-screen p-6 bg-gray-100 text-sm">
-      {/* Breadcrumb */}
-      <div className="mb-4 space-x-4">
-        <Link to="/" className="text-blue-600 hover:underline">← Back to Home</Link>
-        <Link to="/locations" className="text-blue-600 hover:underline">← Back to Locations</Link>
+
+      {/* Header navigation with icons */}
+      <div className="flex items-center space-x-4 mb-4">
+        <button onClick={() => navigate(-1)} className="hover:text-indigo-600">
+          <ArrowLeft size={20} />
+        </button>
+        <Link to="/" className="hover:text-indigo-600">
+          <Home size={20} />
+        </Link>
       </div>
 
       {/* Single summary card */}
       <div
-        className="cursor-pointer bg-white rounded-xl shadow-md p-4 mb-6 border hover:bg-gray-50 transition"
+        className="bg-white rounded-xl shadow-md p-4 mb-6 border"
         onClick={() => setShowAttendance(!showAttendance)}
       >
         <div className="font-bold text-indigo-600 mb-2">{determineSeason()}</div>
@@ -77,9 +103,28 @@ export default function Attendance() {
           <div>Avg $/Hour: <strong>${avgPerHour}</strong></div>
           <div>Avg $/Day: <strong>${avgPerDay}</strong></div>
         </div>
+
+        {/* Payment entry UI */}
+        <div className="mt-3 flex items-center space-x-2">
+          <input
+            type="number"
+            min="0"
+            value={paymentInput}
+            onChange={(e) => setPaymentInput(e.target.value)}
+            className="border rounded p-1 w-24 text-right"
+            placeholder="Enter payment"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={(e) => { e.stopPropagation(); savePayment(); }}
+            className="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700"
+          >
+            Save
+          </button>
+        </div>
       </div>
 
-      {/* Attendance table (only when expanded) */}
+      {/* Attendance list (when toggled) */}
       {showAttendance && (
         <>
           <h2 className="font-semibold mb-2 text-gray-700">Attendance Records:</h2>
