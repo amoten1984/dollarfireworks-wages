@@ -14,7 +14,17 @@ export async function handler(event, context) {
   try {
     await client.connect();
     const res = await client.query(
-      "SELECT * FROM payments WHERE staff_id = $1 ORDER BY id DESC LIMIT 1",
+      `
+      SELECT
+        id,
+        amount AS total_payment,
+        helpers,
+        COALESCE(payment_date, NOW()) AS payment_date
+      FROM payments
+      WHERE staff_id = $1
+      ORDER BY id DESC
+      LIMIT 1
+      `,
       [staffId]
     );
     await client.end();
