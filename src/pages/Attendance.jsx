@@ -57,8 +57,8 @@ export default function Attendance() {
   };
 
   return (
-    <div className="min-h-screen p-4 bg-gray-50 text-sm">
-      {/* Breadcrumb navigation */}
+    <div className="min-h-screen p-6 bg-gray-100 text-sm">
+      {/* Breadcrumb */}
       <div className="mb-4 space-x-4">
         <Link to="/" className="text-blue-600 hover:underline">← Back to Home</Link>
         <Link to="/locations" className="text-blue-600 hover:underline">← Back to Locations</Link>
@@ -66,11 +66,11 @@ export default function Attendance() {
 
       {/* Single summary card */}
       <div
-        className="cursor-pointer bg-white rounded-xl shadow-md p-4 mb-6 hover:bg-gray-100 transition"
+        className="cursor-pointer bg-white rounded-xl shadow-md p-4 mb-6 border hover:bg-gray-50 transition"
         onClick={() => setShowAttendance(!showAttendance)}
       >
-        <div className="font-bold text-blue-600 mb-2">{determineSeason()}</div>
-        <div className="space-y-1">
+        <div className="font-bold text-indigo-600 mb-2">{determineSeason()}</div>
+        <div className="space-y-1 text-gray-800">
           <div>Total Hours: <strong>{totalHours}</strong></div>
           <div>Total Days: <strong>{totalDays}</strong></div>
           <div>Total Payment: <strong>${payment ? payment.total_amount : 0}</strong></div>
@@ -79,10 +79,10 @@ export default function Attendance() {
         </div>
       </div>
 
-      {/* Attendance details section (conditionally shown) */}
+      {/* Attendance table (only when expanded) */}
       {showAttendance && (
         <>
-          <h2 className="font-semibold mb-2">Attendance Records:</h2>
+          <h2 className="font-semibold mb-2 text-gray-700">Attendance Records:</h2>
           {attendance.length === 0 ? (
             <div className="italic text-gray-500">No attendance yet.</div>
           ) : (
