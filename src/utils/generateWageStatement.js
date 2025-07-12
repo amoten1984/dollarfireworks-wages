@@ -1,7 +1,5 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-
-autoTable(jsPDF);  // 👈 REQUIRED for proper plugin registration!
+import "jspdf-autotable";  // Correct way for jspdf 2.x + autotable 3.x
 
 export function generateWageStatement({
   employeeName,
@@ -17,12 +15,6 @@ export function generateWageStatement({
   attendanceRecords
 }) {
   const doc = new jsPDF();
-
-  const companyName = 'Dollar Fireworks LLC';
-  const companyAddress = '12675 Veterans Memorial Dr, Houston, TX 77014';
-  const companyPhone = '832-466-7251';
-  const owner = 'Abdul Maqsood';
-  const email = 'dollarfireworks@gmail.com';
 
   doc.setFontSize(18);
   doc.text('WAGE STATEMENT', 14, 20);
@@ -49,8 +41,7 @@ export function generateWageStatement({
   });
 
   let y = doc.previousAutoTable.finalY + 20;
-  doc.setFontSize(10);
-  doc.line(14, y, 200, y, 'S');
+  doc.line(14, y, 200, y);
   y += 6;
   doc.text('Non-negotiable: For reference only', 14, y);
   y += 6;
@@ -58,15 +49,7 @@ export function generateWageStatement({
   y += 6;
   doc.text(`Amount: $${wagesPaid}`, 14, y);
   y += 6;
-  doc.text(companyName, 14, y);
-  y += 6;
-  doc.text(companyAddress, 14, y);
-  y += 6;
-  doc.text(`Phone: ${companyPhone}`, 14, y);
-  y += 6;
-  doc.text(`Owner: ${owner}`, 14, y);
-  y += 6;
-  doc.text(`Email: ${email}`, 14, y);
+  doc.text("Dollar Fireworks LLC", 14, y);
 
   doc.save(`${employeeName}_${season}_Statement.pdf`);
 }
