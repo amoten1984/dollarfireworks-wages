@@ -1,35 +1,34 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 
 export default function Attendance() {
   const { staffId } = useParams();
-  const [season, setSeason] = useState(null);
-  const [enteredHours, setEnteredHours] = useState({});
+  const [attendance, setAttendance] = useState([]);
+  const [payment, setPayment] = useState(null);
 
-  const julyDates = Array.from({ length: 21 }, (_, i) => {
-    const date = new Date(new Date().getFullYear(), 5, 20 + i);
-    return date.toISOString().slice(0, 10);
-  });
+  useEffect(() => {
+    fetchAttendance();
+    fetchPayment();
+  }, [staffId]);
 
-  const newYearDates = [
-    ...Array.from({ length: 12 }, (_, i) => {
-      const date = new Date(new Date().getFullYear(), 11, 20 + i);
-      return date.toISOString().slice(0, 10);
-    }),
-    ...Array.from({ length: 5 }, (_, i) => {
-      const date = new Date(new Date().getFullYear() + 1, 0, 1 + i);
-      return date.toISOString().slice(0, 10);
-    }),
-  ];
-
-  const setHours = (date, hours) => {
-    setEnteredHours((prev) => ({ ...prev, [date]: hours }));
+  const fetchAttendance = async () => {
+    const res = await fetch(`/.netlify/functions/getAttendance?staffId=${staffId}`);
+    const data = await res.json();
+    setAttendance(data);
   };
 
-  const saveAttendance = async () => {
-    const entries = Object.entries(enteredHours);
-    for (let [date, hours] of entries) {
-      if (!hours) continue;
+  const fetchPayment = async () => {
+    const res = await fetch(`/.netlify/functions/getPayment?staffId=${staffId}`);
+    const data = await res.json();
+    if (data) {
+      setPayment(data);
+    }
+  };
+
+  const addAttendance = async () => {
+    const date = prompt("Enter work date (YYYY-MM-DD):");
+    const hours = prompt("Enter hours worked:");
+    if (date && hours) {
       await fetch("/.netlify/functions/addAttendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -39,74 +38,84 @@ export default function Attendance() {
           hoursWorked: parseInt(hours, 10),
         }),
       });
+      fetchAttendance();
     }
-    alert("Attendance saved!");
   };
 
-  const datesToShow = season === "july" ? julyDates : season === "newyear" ? newYearDates : [];
-
-  const formatDateWithDay = (dateStr) => {
-    const date = new Date(dateStr);
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    const formattedDate = date.toLocaleDateString(undefined, options);
-    const dayOfWeek = date.toLocaleDateString(undefined, { weekday: "long" });
-    return `${formattedDate} (${dayOfWeek})`;
+  const recordPayment = async () => {
+    const amount = prompt("Enter total payment amount:");
+    const season = determineSeason();
+    if (amount && season) {
+      await fetch("/.netlify/functions/addPayment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          staffId,
+          season,
+          totalAmount: parseFloat(amount),
+        }),
+      });
+      fetchPayment();
+    }
   };
+
+  const totalHours = attendance.reduce((sum, rec) => sum + rec.hours_worked, 0);
+  const totalDays = new Set(attendance.map((a) => a.work_date)).size;
+  const season = determineSeason();
+  const avgPerHour = payment && totalHours > 0 ? (payment.total_amount / totalHours).toFixed(2) : 0;
+  const avgPerDay = payment && totalDays > 0 ? (payment.total_amount / totalDays).toFixed(2) : 0;
+
+  function determineSeason() {
+    if (attendance.length === 0) return "None";
+    const firstDate = new Date(attendance[0].work_date);
+    const month = firstDate.getMonth();
+    if (month === 5 || month === 6) return `July 4th ${firstDate.getFullYear()}`;
+    if (month === 11 || month === 0) return `New Year ${firstDate.getFullYear()}`;
+    return `${firstDate.getFullYear()}`;
+  }
 
   return (
     <div className="min-h-screen p-4 bg-gray-50 text-sm">
-      <h1 className="text-xl font-bold mb-4">Add Attendance</h1>
+      <h1 className="text-2xl font-bold mb-4">Attendance & Summary</h1>
 
-      {!season && (
-        <div className="space-x-2">
-          <button
-            onClick={() => setSeason("july")}
-            className="px-3 py-1 bg-blue-500 text-white rounded"
-          >
-            July 4th Season
-          </button>
-          <button
-            onClick={() => setSeason("newyear")}
-            className="px-3 py-1 bg-green-500 text-white rounded"
-          >
-            New Year’s Season
-          </button>
-        </div>
-      )}
+      <div className="space-x-2 mb-4">
+        <button
+          onClick={addAttendance}
+          className="px-4 py-2 bg-blue-500 text-white rounded"
+        >
+          + Add Attendance
+        </button>
+        <button
+          onClick={recordPayment}
+          className="px-4 py-2 bg-green-500 text-white rounded"
+        >
+          💵 Record Payment
+        </button>
+      </div>
 
-      {season && (
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full border-collapse text-sm">
-            <thead>
-              <tr>
-                <th className="border p-1 text-left">Date</th>
-                <th className="border p-1 text-left">Hours Worked</th>
-              </tr>
-            </thead>
-            <tbody>
-              {datesToShow.map((date) => (
-                <tr key={date}>
-                  <td className="border p-1">{formatDateWithDay(date)}</td>
-                  <td className="border p-1">
-                    <input
-                      type="number"
-                      min="0"
-                      className="border rounded p-1 w-20"
-                      value={enteredHours[date] || ""}
-                      onChange={(e) => setHours(date, e.target.value)}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <button
-            onClick={saveAttendance}
-            className="mt-4 px-3 py-1 bg-purple-500 text-white rounded"
-          >
-            Save Attendance
-          </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="bg-white rounded-xl shadow-md p-4">
+          <h2 className="font-semibold text-gray-700 mb-2">Summary</h2>
+          <div>Total hours worked: <strong>{totalHours}</strong></div>
+          <div>Total days worked: <strong>{totalDays}</strong></div>
+          <div>Total payment: <strong>${payment ? payment.total_amount : 0}</strong></div>
+          <div>Season: <strong>{payment ? payment.season : season}</strong></div>
+          <div>Average pay/hour: <strong>${avgPerHour}</strong></div>
+          <div>Average pay/day: <strong>${avgPerDay}</strong></div>
         </div>
+      </div>
+
+      <h2 className="font-semibold mb-2">Attendance Records:</h2>
+      {attendance.length === 0 ? (
+        <div className="italic text-gray-500">No attendance yet.</div>
+      ) : (
+        <ul className="space-y-1">
+          {attendance.map((a) => (
+            <li key={a.id} className="border p-2 rounded bg-white shadow-sm">
+              {a.work_date} — {a.hours_worked} hours
+            </li>
+          ))}
+        </ul>
       )}
 
       <div className="mt-4">
