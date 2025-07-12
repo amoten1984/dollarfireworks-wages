@@ -17,9 +17,11 @@ export async function handler(event, context) {
       `
       SELECT
         id,
-        amount AS total_payment,
+        staff_id,
+        season,
+        total_amount AS total_payment,  -- ✅ fix alias
         helpers,
-        COALESCE(payment_date, NOW()) AS payment_date
+        COALESCE(payment_date, NOW()) AS payment_date  -- Optional: add if you want safe fallback for date
       FROM payments
       WHERE staff_id = $1
       ORDER BY id DESC
