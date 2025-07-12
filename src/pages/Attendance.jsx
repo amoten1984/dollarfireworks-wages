@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Home, ArrowLeft } from "lucide-react";
-import { generateWageStatement } from "./generateWageStatement";
+import { generateWageStatement } from '../utils/generateWageStatement';
 
 export default function Attendance() {
   const { staffId } = useParams();
