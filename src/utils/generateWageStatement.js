@@ -1,5 +1,7 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+autoTable(jsPDF);  // 👈 REQUIRED for proper plugin registration!
 
 export function generateWageStatement({
   employeeName,
@@ -22,17 +24,14 @@ export function generateWageStatement({
   const owner = 'Abdul Maqsood';
   const email = 'dollarfireworks@gmail.com';
 
-  // Header
   doc.setFontSize(18);
   doc.text('WAGE STATEMENT', 14, 20);
 
-  // Employee + Location info left
   doc.setFontSize(12);
   doc.text(`Employee: ${employeeName}`, 14, 30);
   doc.text(`Location: ${location}`, 14, 36);
   doc.text(`Season: ${season}`, 14, 42);
 
-  // Summary info right
   const rightStart = 140;
   doc.text(`Total Hours: ${totalHours}`, rightStart, 30);
   doc.text(`Total Days: ${totalDays}`, rightStart, 36);
@@ -42,7 +41,6 @@ export function generateWageStatement({
   doc.text(`Avg $/Day: $${avgPerDay}`, rightStart, 60);
   doc.text(`Payment Date: ${paymentDate}`, rightStart, 66);
 
-  // Attendance Table
   doc.autoTable({
     startY: 75,
     head: [['Date', 'Hours Worked']],
@@ -50,7 +48,6 @@ export function generateWageStatement({
     styles: { fontSize: 10 },
   });
 
-  // Check section design
   let y = doc.previousAutoTable.finalY + 20;
   doc.setFontSize(10);
   doc.line(14, y, 200, y, 'S');
