@@ -1,6 +1,8 @@
 import { Client } from "pg";
 
 export async function handler(event, context) {
+  console.log("Incoming request body:", event.body);
+  
   const { staffId, season, totalAmount, helpers } = JSON.parse(event.body);
   if (!staffId || !season || totalAmount == null || helpers == null) {
     return { statusCode: 400, body: "Missing required fields" };
@@ -32,6 +34,6 @@ export async function handler(event, context) {
     };
   } catch (error) {
     console.error("Database error:", error);
-    return { statusCode: 500, body: JSON.stringify({ error: "Internal Server Error" }) };
+    return { statusCode: 500, body: JSON.stringify({ error: "Internal Server Error", details: error.message }) };
   }
 }

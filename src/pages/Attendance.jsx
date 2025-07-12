@@ -35,6 +35,15 @@ export default function Attendance() {
   };
 
   const savePayment = async () => {
+    const helpersToSave = helpersInput === "" ? 0 : parseInt(helpersInput, 10);
+
+    console.log({
+      staffId,
+      season: determineSeason(),
+      totalAmount: parseFloat(paymentInput),
+      helpers: helpersToSave
+    });
+
     await fetch("/.netlify/functions/addPayment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -42,7 +51,7 @@ export default function Attendance() {
         staffId,
         season: determineSeason(),
         totalAmount: parseFloat(paymentInput),
-        helpers: parseInt(helpersInput, 10) || 0
+        helpers: helpersToSave
       }),
     });
     setEditMode(false);
@@ -83,8 +92,8 @@ export default function Attendance() {
 
   return (
     <div className="min-h-screen p-6 bg-gray-100 text-sm">
-      
-      {/* Consistent Nav buttons */}
+
+      {/* Navigation */}
       <div className="flex items-center space-x-4 mb-4">
         <button onClick={() => navigate(-1)} className="hover:text-indigo-600"><ArrowLeft size={20} /></button>
         <Link to="/" className="hover:text-indigo-600"><Home size={20} /></Link>
@@ -143,7 +152,7 @@ export default function Attendance() {
         )}
       </div>
 
-      {/* Attendance records only visible when editing */}
+      {/* Attendance Records (only when editing) */}
       {editMode && (
         <>
           <h2 className="font-semibold mb-2 text-gray-700">Attendance Records:</h2>
