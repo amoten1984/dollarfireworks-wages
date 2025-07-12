@@ -13,21 +13,22 @@ export async function handler(event, context) {
 
   try {
     await client.connect();
-    const res = await client.query(
-      `
-      SELECT
-        s.id,
-        s.name AS staff_name,
-        l.name AS location_name
-      FROM
-        staff s
-      LEFT JOIN
-        locations l ON s.location_id = l.id
-      WHERE
-        s.location_id = $1
-      `,
-      [locationId]
-    );
+const res = await client.query(
+  `
+  SELECT
+    s.id,
+    s.name AS name,  -- <--- change this line back to 'name'
+    l.name AS location_name
+  FROM
+    staff s
+  LEFT JOIN
+    locations l ON s.location_id = l.id
+  WHERE
+    s.location_id = $1
+  `,
+  [locationId]
+);
+
     await client.end();
 
     return {
