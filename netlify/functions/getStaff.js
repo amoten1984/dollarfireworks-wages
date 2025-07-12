@@ -1,9 +1,9 @@
 import { Client } from "pg";
 
 export async function handler(event, context) {
-  const staffId = event.queryStringParameters.staffId;
-  if (!staffId) {
-    return { statusCode: 400, body: "Missing staffId" };
+  const locationId = event.queryStringParameters.locationId;
+  if (!locationId) {
+    return { statusCode: 400, body: "Missing locationId" };
   }
 
   const client = new Client({
@@ -24,20 +24,16 @@ export async function handler(event, context) {
       LEFT JOIN
         locations l ON s.location_id = l.id
       WHERE
-        s.id = $1
+        s.location_id = $1
       `,
-      [staffId]
+      [locationId]
     );
     await client.end();
-
-    if (res.rows.length === 0) {
-      return { statusCode: 404, body: "Staff not found" };
-    }
 
     return {
       statusCode: 200,
       headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify(res.rows[0]),
+      body: JSON.stringify(res.rows),
     };
   } catch (error) {
     console.error("Database error:", error);
