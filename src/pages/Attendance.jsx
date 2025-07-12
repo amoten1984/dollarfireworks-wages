@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Home, ArrowLeft } from "lucide-react";
-import { generateWageStatement } from '../utils/generateWageStatement';
+import { generateWageStatement } from "../utils/generateWageStatement";  // ✅ Adjust path if needed
 
 export default function Attendance() {
-  const { staffId } = useParams();
+  const { locationId, staffId } = useParams();
   const navigate = useNavigate();
+
   const [attendance, setAttendance] = useState([]);
   const [payment, setPayment] = useState(null);
   const [paymentInput, setPaymentInput] = useState("");
@@ -13,10 +14,15 @@ export default function Attendance() {
   const [helpersInput, setHelpersInput] = useState("");
   const [editMode, setEditMode] = useState(false);
 
+  const [staffName, setStaffName] = useState("");
+  const [locationName, setLocationName] = useState("");
+
   useEffect(() => {
     fetchAttendance();
     fetchPayment();
-  }, [staffId]);
+    fetchStaff();
+    fetchLocation();
+  }, [staffId, locationId]);
 
   const fetchAttendance = async () => {
     const res = await fetch(`/.netlify/functions/getAttendance?staffId=${staffId}`);
@@ -33,6 +39,18 @@ export default function Attendance() {
       setHelpers(data.helpers || 0);
       setHelpersInput(data.helpers || "");
     }
+  };
+
+  const fetchStaff = async () => {
+    const res = await fetch(`/.netlify/functions/getStaff?staffId=${staffId}`);
+    const data = await res.json();
+    setStaffName(data.name);
+  };
+
+  const fetchLocation = async () => {
+    const res = await fetch(`/.netlify/functions/getLocation?locationId=${locationId}`);
+    const data = await res.json();
+    setLocationName(data.name);
   };
 
   const savePayment = async () => {
@@ -67,8 +85,8 @@ export default function Attendance() {
 
   const exportPDF = () => {
     generateWageStatement({
-      employeeName: payment?.staff_name || "Employee",
-      location: "Unknown Location",
+      employeeName: staffName,
+      location: locationName,
       season: determineSeason(),
       totalHours,
       totalDays,
@@ -76,12 +94,21 @@ export default function Attendance() {
       helpers: helpers || 0,
       avgPerHour,
       avgPerDay,
-      paymentDate: new Date().toLocaleDateString(),
+      paymentDate: payment?.payment_date || "N/A",
       attendanceRecords: attendance.map((a) => ({
         date: new Date(a.work_date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" }),
         hours: a.hours_worked
       }))
     });
+  };
+
+  const updateHours = async (id, hours) => {
+    await fetch("/.netlify/functions/updateAttendance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, hoursWorked: hours }),
+    });
+    fetchAttendance();
   };
 
   return (
@@ -103,16 +130,10 @@ export default function Attendance() {
             <div>Avg $/Day: <strong>${avgPerDay}</strong></div>
           </div>
           <div className="flex flex-col items-end space-y-2">
-            <button 
-              onClick={() => setEditMode(!editMode)}
-              className="text-xs text-indigo-600 border border-indigo-600 rounded px-2 py-1 hover:bg-indigo-50 transition"
-            >
+            <button onClick={() => setEditMode(!editMode)} className="text-xs text-indigo-600 border border-indigo-600 rounded px-2 py-1 hover:bg-indigo-50 transition">
               {editMode ? "Close" : "Edit"}
             </button>
-            <button
-              onClick={exportPDF}
-              className="text-xs text-green-600 border border-green-600 rounded px-2 py-1 hover:bg-green-50 transition"
-            >
+            <button onClick={exportPDF} className="text-xs text-green-600 border border-green-600 rounded px-2 py-1 hover:bg-green-50 transition">
               Export Statement
             </button>
           </div>
@@ -122,26 +143,13 @@ export default function Attendance() {
           <div className="mt-3 flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
               <label>Wages Paid:</label>
-              <input
-                type="number"
-                value={paymentInput}
-                onChange={(e) => setPaymentInput(e.target.value)}
-                className="border rounded p-1 w-24 text-right"
-              />
+              <input type="number" value={paymentInput} onChange={(e) => setPaymentInput(e.target.value)} className="border rounded p-1 w-24 text-right" />
             </div>
             <div className="flex items-center space-x-2">
               <label>Helpers:</label>
-              <input
-                type="number"
-                value={helpersInput}
-                onChange={(e) => setHelpersInput(e.target.value)}
-                className="border rounded p-1 w-24 text-right"
-              />
+              <input type="number" value={helpersInput} onChange={(e) => setHelpersInput(e.target.value)} className="border rounded p-1 w-24 text-right" />
             </div>
-            <button
-              onClick={savePayment}
-              className="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700"
-            >
+            <button onClick={savePayment} className="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">
               Save
             </button>
           </div>
