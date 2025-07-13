@@ -1,9 +1,9 @@
-
 import { Client } from "pg";
 
 export async function handler(event, context) {
   const staffId = event.queryStringParameters.staffId;
   if (!staffId) {
+    console.error("Missing staffId in request");
     return { statusCode: 400, body: "Missing staffId" };
   }
 
@@ -14,22 +14,15 @@ export async function handler(event, context) {
 
   try {
     await client.connect();
-    const res = await client.query(
-      `
-      SELECT
-        id,
-        staff_id,
-        season,
-        total_amount AS total_payment,
-        helpers,
-        COALESCE(payment_date, NOW()) AS payment_date
-      FROM payments
-      WHERE staff_id = $1
-      ORDER BY id DESC
-      LIMIT 1
-      `,
-      [staffId]
-    );
+
+    const sql = "SELECT id, staff_id, season, total_amount AS total_payment, helpers FROM payments WHERE staff_id = $1 ORDER BY id DESC LIMIT 1";
+
+    console.log("Running SQL:", sql, "with staffId:", staffId);
+
+    const res = await client.query(sql, [staffId]);
+
+    console.log("Query result:", res.rows);
+
     await client.end();
 
     return {
@@ -38,7 +31,7 @@ export async function handler(event, context) {
       body: JSON.stringify(res.rows[0] || {}),
     };
   } catch (error) {
-    console.error("Database error:", error);
-    return { statusCode: 500, body: JSON.stringify({ error: "Internal Server Error" }) };
+    console.error("Database error:", error.message, error.stack);
+    return { statusCode: 500, body: JSON.stringify({ error: "Internal Server Error", details: error.message }) };
   }
 }
