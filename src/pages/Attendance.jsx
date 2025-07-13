@@ -14,6 +14,9 @@ export default function Attendance() {
   const [helpersInput, setHelpersInput] = useState("");
   const [editMode, setEditMode] = useState(false);
 
+  const [workDate, setWorkDate] = useState("");
+  const [hoursWorked, setHoursWorked] = useState("");
+
   useEffect(() => {
     fetchAttendance();
     fetchPayment();
@@ -98,6 +101,27 @@ export default function Attendance() {
     });
   };
 
+  const handleAddAttendance = async () => {
+    if (!workDate || !hoursWorked) {
+      alert("Please enter both date and hours.");
+      return;
+    }
+
+    await fetch("/.netlify/functions/addAttendance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        staffId,
+        workDate,
+        hoursWorked: parseInt(hoursWorked, 10)
+      }),
+    });
+
+    setWorkDate("");
+    setHoursWorked("");
+    fetchAttendance();
+  };
+
   return (
     <div className="min-h-screen p-6 bg-gray-100 text-sm">
       <div className="flex items-center space-x-4 mb-4">
@@ -160,6 +184,28 @@ export default function Attendance() {
             </button>
           </div>
         )}
+
+        {/* Add Attendance form */}
+        <div className="mt-4 p-4 border rounded bg-white shadow-sm">
+          <h4 className="font-bold mb-2">Add Attendance</h4>
+          <div className="flex flex-col space-y-2">
+            <label>
+              Date:
+              <input type="date" value={workDate} onChange={(e) => setWorkDate(e.target.value)} className="border p-1 rounded ml-2" />
+            </label>
+            <label>
+              Hours Worked:
+              <input type="number" value={hoursWorked} onChange={(e) => setHoursWorked(e.target.value)} className="border p-1 rounded ml-2 w-20" />
+            </label>
+            <button
+              onClick={handleAddAttendance}
+              className="mt-2 px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700"
+            >
+              Save Attendance
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );
