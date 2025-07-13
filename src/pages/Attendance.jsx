@@ -70,19 +70,31 @@ export default function Attendance() {
     fetchAttendance();
   };
 
-  const handleSaveMissingAttendance = async () => {
-    await fetch("/.netlify/functions/updateAttendance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        staffId,
-        attendance: newAttendance.filter(a => a.date && a.hours > 0).map(a => ({ date: a.date, hours: a.hours }))
-      })
-    });
-    await savePayment();
-    setEditMode(false);
-    fetchAttendance();
+const handleSaveMissingAttendance = async () => {
+  if (!selectedSeason || newAttendance.length === 0) {
+    alert("Please select a season and add at least one attendance record.");
+    return;
+  }
+
+  const payload = {
+    staffId,
+    season: selectedSeason,
+    records: newAttendance.filter(a => a.date && a.hours > 0)
   };
+
+  await fetch("/.netlify/functions/updatePaymentSeasonAndAttendance", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  await savePayment();
+  setEditMode(false);
+  setNewAttendance([{ date: "", hours: 0 }]);
+  setSelectedSeason("");
+  fetchAttendance();
+  fetchPayment();
+};
 
   const determineSeason = () => {
     if (attendance.length === 0) return "No Season";

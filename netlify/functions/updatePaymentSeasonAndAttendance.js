@@ -1,10 +1,13 @@
-// 📄 updatePaymentSeasonAndAttendance.js (Netlify Function)
+// 📄 updatePaymentSeasonAndAttendance.js
 
 const db = require("./_db");
 
 exports.handler = async (event) => {
   try {
-    const { staffId, season, records } = JSON.parse(event.body);
+    const body = JSON.parse(event.body);
+    const staffId = body.staffId;
+    const season = body.season;
+    const records = body.records || body.attendance || [];
 
     if (!staffId || !season || !records.length) {
       return { statusCode: 400, body: "Missing data" };
