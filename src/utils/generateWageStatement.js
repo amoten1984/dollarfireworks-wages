@@ -5,12 +5,10 @@ export function generateWageStatement({
   employeeName,
   location,
   ratePerHour,
+  totalHours,
+  wagesPaid,
   periodStart,
   periodEnd,
-  totalHours,
-  grossPay,
-  deductions = [],
-  netPay,
   paymentDate,
   attendanceRecords
 }) {
@@ -25,24 +23,20 @@ export function generateWageStatement({
   doc.text("PAY STUB", 14, 20);
   doc.setFontSize(10);
   doc.text(`Employee: ${employeeName}`, 14, 30);
-  doc.text(`Employer: ${companyName}`, 14, 35);
-  doc.text(`Address: ${companyAddress}`, 14, 40);
-  doc.text(`Phone: ${companyPhone}`, 14, 45);
+  doc.text(`Location: ${location}`, 14, 35);
+  doc.text(`Employer: ${companyName}`, 14, 40);
+  doc.text(`Address: ${companyAddress}`, 14, 45);
+  doc.text(`Phone: ${companyPhone}`, 14, 50);
 
   doc.text(`Pay Period: ${periodStart} to ${periodEnd}`, 140, 30);
   doc.text(`Rate: $${ratePerHour}/hr`, 140, 35);
   doc.text(`Hours Worked: ${totalHours}`, 140, 40);
 
-  doc.text(`Gross Pay: $${grossPay.toFixed(2)}`, 14, 55);
-  let y = 60;
-  deductions.forEach(d => {
-    doc.text(`${d.label}: -$${d.amount.toFixed(2)}`, 14, y);
-    y += 5;
-  });
-  doc.text(`Net Pay: $${netPay.toFixed(2)}`, 14, y + 5);
+  doc.setFontSize(11);
+  doc.text(`Net Pay: $${Number(wagesPaid).toFixed(2)}`, 14, 60);
 
   autoTable(doc, {
-    startY: y + 15,
+    startY: 70,
     head: [['Date', 'Hours Worked']],
     body: attendanceRecords.map((rec) => [rec.date, rec.hours]),
     styles: { fontSize: 10 }

@@ -14,9 +14,6 @@ export default function Attendance() {
   const [helpersInput, setHelpersInput] = useState("");
   const [editMode, setEditMode] = useState(false);
 
-  const ratePerHour = 15; // Example rate — replace with real value or fetch from DB if needed
-  const standardDeductions = [{ label: "Federal Tax", amount: 50 }]; // Example deductions
-
   useEffect(() => {
     fetchAttendance();
     fetchPayment();
@@ -76,27 +73,23 @@ export default function Attendance() {
   const avgPerHour = payment && totalHours > 0 ? (payment.total_payment / totalHours).toFixed(2) : 0;
   const avgPerDay = payment && totalDays > 0 ? (payment.total_payment / totalDays).toFixed(2) : 0;
 
-  const grossPay = totalHours * ratePerHour;
-  const totalDeductions = standardDeductions.reduce((sum, d) => sum + d.amount, 0);
-  const netPay = grossPay - totalDeductions;
-
   const periodStart = attendance.length ? new Date(attendance[0].work_date).toLocaleDateString() : "";
   const periodEnd = attendance.length ? new Date(attendance[attendance.length - 1].work_date).toLocaleDateString() : "";
 
   const exportPDF = () => {
     const employee = staffInfo.name || "Unknown Employee";
     const location = staffInfo.location_name || "Unknown Location";
+    const wagesPaid = payment?.total_payment || 0;
+    const ratePerHour = totalHours > 0 ? (wagesPaid / totalHours).toFixed(2) : 0;
 
     generateWageStatement({
       employeeName: employee,
       location,
       ratePerHour,
+      totalHours,
+      wagesPaid,
       periodStart,
       periodEnd,
-      totalHours,
-      grossPay,
-      deductions: standardDeductions,
-      netPay,
       paymentDate: new Date().toLocaleDateString(),
       attendanceRecords: attendance.map((a) => ({
         date: new Date(a.work_date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" }),
@@ -107,15 +100,67 @@ export default function Attendance() {
 
   return (
     <div className="min-h-screen p-6 bg-gray-100 text-sm">
-      {/* ... (UI code remains unchanged) */}
-      <button
-        onClick={exportPDF}
-        disabled={!staffInfo.name}
-        className="text-xs text-green-600 border border-green-600 rounded px-2 py-1 hover:bg-green-50 transition disabled:opacity-50"
-      >
-        Export Statement
-      </button>
-      {/* ... */}
+      <div className="flex items-center space-x-4 mb-4">
+        <button onClick={() => navigate(-1)} className="hover:text-indigo-600"><ArrowLeft size={20} /></button>
+        <Link to="/" className="hover:text-indigo-600"><Home size={20} /></Link>
+      </div>
+
+      <div className="relative bg-white rounded-xl shadow-md p-4 mb-6 border">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="font-bold text-indigo-600 mb-2">{determineSeason()}</div>
+            <div>Total Hours: <strong>{totalHours}</strong></div>
+            <div>Total Days: <strong>{totalDays}</strong></div>
+            <div>Wages Paid: <strong>${payment ? payment.total_payment : 0}</strong></div>
+            <div>Helpers: <strong>{helpers}</strong></div>
+            <div>Avg $/Hour: <strong>${avgPerHour}</strong></div>
+            <div>Avg $/Day: <strong>${avgPerDay}</strong></div>
+          </div>
+          <div className="flex flex-col items-end space-y-2">
+            <button 
+              onClick={() => setEditMode(!editMode)}
+              className="text-xs text-indigo-600 border border-indigo-600 rounded px-2 py-1 hover:bg-indigo-50 transition"
+            >
+              {editMode ? "Close" : "Edit"}
+            </button>
+            <button
+              onClick={exportPDF}
+              className="text-xs text-green-600 border border-green-600 rounded px-2 py-1 hover:bg-green-50 transition"
+            >
+              Export Statement
+            </button>
+          </div>
+        </div>
+
+        {editMode && (
+          <div className="mt-3 flex flex-col space-y-2">
+            <div className="flex items-center space-x-2">
+              <label>Wages Paid:</label>
+              <input
+                type="number"
+                value={paymentInput}
+                onChange={(e) => setPaymentInput(e.target.value)}
+                className="border rounded p-1 w-24 text-right"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <label>Helpers:</label>
+              <input
+                type="number"
+                value={helpersInput}
+                onChange={(e) => setHelpersInput(e.target.value)}
+                className="border rounded p-1 w-24 text-right"
+              />
+            </div>
+            <button
+              onClick={savePayment}
+              className="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700"
+            >
+              Save
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
