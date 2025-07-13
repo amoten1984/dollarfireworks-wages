@@ -15,6 +15,7 @@ export default function Attendance() {
   const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
+    console.log("useEffect triggered, staffId:", staffId);
     fetchAttendance();
     fetchPayment();
     fetchStaff();
@@ -38,8 +39,10 @@ export default function Attendance() {
   };
 
   const fetchStaff = async () => {
+    console.log("Calling fetchStaff for staffId:", staffId);
     const res = await fetch(`/.netlify/functions/getStaff?staffId=${staffId}`);
     const data = await res.json();
+    console.log("Fetched staff data:", data);
     setStaffInfo(data);
   };
 
@@ -72,6 +75,8 @@ export default function Attendance() {
   const totalDays = new Set(attendance.map((a) => a.work_date)).size;
   const avgPerHour = payment && totalHours > 0 ? (payment.total_payment / totalHours).toFixed(2) : 0;
   const avgPerDay = payment && totalDays > 0 ? (payment.total_payment / totalDays).toFixed(2) : 0;
+
+  console.log("Current staffInfo before render:", staffInfo);
 
   const exportPDF = () => {
     const employee = staffInfo.staff_name || "Unknown Employee";
@@ -129,35 +134,6 @@ export default function Attendance() {
             </button>
           </div>
         </div>
-
-        {editMode && (
-          <div className="mt-3 flex flex-col space-y-2">
-            <div className="flex items-center space-x-2">
-              <label>Wages Paid:</label>
-              <input
-                type="number"
-                value={paymentInput}
-                onChange={(e) => setPaymentInput(e.target.value)}
-                className="border rounded p-1 w-24 text-right"
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <label>Helpers:</label>
-              <input
-                type="number"
-                value={helpersInput}
-                onChange={(e) => setHelpersInput(e.target.value)}
-                className="border rounded p-1 w-24 text-right"
-              />
-            </div>
-            <button
-              onClick={savePayment}
-              className="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700"
-            >
-              Save
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
