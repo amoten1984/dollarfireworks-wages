@@ -1,88 +1,52 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import numberToWords from "number-to-words";
 
 export function generateWageStatement({
   employeeName,
   location,
-  season,
+  ratePerHour,
+  periodStart,
+  periodEnd,
   totalHours,
-  totalDays,
-  wagesPaid,
-  helpers,
-  avgPerHour,
-  avgPerDay,
+  grossPay,
+  deductions = [],
+  netPay,
   paymentDate,
   attendanceRecords
 }) {
   const doc = new jsPDF();
+
   const companyName = 'Dollar Fireworks LLC';
   const companyAddress = '12675 Veterans Memorial Dr, Houston, TX 77014';
   const companyPhone = '832-466-7251';
-  const owner = 'Abdul Maqsood';
-  const email = 'dollarfireworks@gmail.com';
-  const checkNumber = Math.floor(Math.random() * 900000 + 100000);
 
-  doc.setFontSize(18);
-  doc.text('WAGE STATEMENT', 14, 20);
-  doc.setFontSize(12);
+  // Header
+  doc.setFontSize(14);
+  doc.text("PAY STUB", 14, 20);
+  doc.setFontSize(10);
   doc.text(`Employee: ${employeeName}`, 14, 30);
-  doc.text(`Location: ${location}`, 14, 36);
-  doc.text(`Season: ${season}`, 14, 42);
+  doc.text(`Employer: ${companyName}`, 14, 35);
+  doc.text(`Address: ${companyAddress}`, 14, 40);
+  doc.text(`Phone: ${companyPhone}`, 14, 45);
 
-  const rightStart = 140;
-  doc.text(`Total Hours: ${totalHours}`, rightStart, 30);
-  doc.text(`Total Days: ${totalDays}`, rightStart, 36);
-  doc.text(`Wages Paid: $${wagesPaid}`, rightStart, 42);
-  doc.text(`Helpers: ${helpers}`, rightStart, 48);
-  doc.text(`Avg $/Hour: $${avgPerHour}`, rightStart, 54);
-  doc.text(`Avg $/Day: $${avgPerDay}`, rightStart, 60);
-  doc.text(`Payment Date: ${paymentDate}`, rightStart, 66);
+  doc.text(`Pay Period: ${periodStart} to ${periodEnd}`, 140, 30);
+  doc.text(`Rate: $${ratePerHour}/hr`, 140, 35);
+  doc.text(`Hours Worked: ${totalHours}`, 140, 40);
+
+  doc.text(`Gross Pay: $${grossPay.toFixed(2)}`, 14, 55);
+  let y = 60;
+  deductions.forEach(d => {
+    doc.text(`${d.label}: -$${d.amount.toFixed(2)}`, 14, y);
+    y += 5;
+  });
+  doc.text(`Net Pay: $${netPay.toFixed(2)}`, 14, y + 5);
 
   autoTable(doc, {
-    startY: 75,
+    startY: y + 15,
     head: [['Date', 'Hours Worked']],
     body: attendanceRecords.map((rec) => [rec.date, rec.hours]),
     styles: { fontSize: 10 }
   });
 
-  let y = doc.previousAutoTable.finalY + 20;
-  doc.setLineWidth(0.8);
-  doc.setDrawColor(50);
-  doc.rect(14, y, 180, 60);
-
-  doc.setFontSize(10);
-  doc.text(companyName, 18, y + 6);
-  doc.text(companyAddress, 18, y + 12);
-  doc.text(`Phone: ${companyPhone}`, 18, y + 18);
-  doc.text(`Owner: ${owner}`, 18, y + 24);
-  doc.text(`Email: ${email}`, 18, y + 30);
-
-  doc.text(`Date: ${paymentDate}`, 150, y + 6);
-  doc.text(`Check No: ${checkNumber}`, 150, y + 12);
-
-  doc.setFont("helvetica", "bold");
-  doc.text(`Pay to the Order of: ${employeeName}`, 18, y + 42);
-  doc.setFont("helvetica", "normal");
-
-  const amountWords = numberToWords.toWords(Math.floor(wagesPaid));
-  const cents = Math.round((wagesPaid % 1) * 100).toString().padStart(2, '0');
-  const amountInWords = `${amountWords.charAt(0).toUpperCase() + amountWords.slice(1)} and ${cents}/100 dollars`;
-
-  doc.text(`$${Number(wagesPaid).toFixed(2)}`, 190, y + 42, { align: 'right' });
-  doc.text(amountInWords, 18, y + 48);
-
-  doc.line(120, y + 58, 190, y + 58);
-  doc.setFontSize(12);
-  doc.setFont("times", "italic");
-  doc.text("Abdul Maqsood", 155, y + 56, { align: "center" });
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.text('Authorized Signature', 155, y + 62, { align: "center" });
-
-  doc.setFontSize(8);
-  doc.setTextColor(150);
-  doc.text('NON-NEGOTIABLE', 100, y + 30, { align: 'center' });
-
-  doc.save(`${employeeName}_${season}_Statement.pdf`);
+  doc.save(`${employeeName}_${periodStart}_Paystub.pdf`);
 }
