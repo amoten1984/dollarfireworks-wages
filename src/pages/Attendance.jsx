@@ -74,35 +74,25 @@ export default function Attendance() {
   const avgPerDay = payment && totalDays > 0 ? (payment.total_payment / totalDays).toFixed(2) : 0;
 
   const exportPDF = () => {
-  if (!staffInfo.staff_name) {
-    alert("Employee info not loaded yet.");
-    return;
-  }
-  generateWageStatement({
-    employeeName: staffInfo.staff_name,
-    location: staffInfo.location_name || "Unknown Location",
-    season: determineSeason(),
-    totalHours,
-    totalDays,
-    wagesPaid: payment?.total_payment || 0,
-    helpers: helpers || 0,
-    avgPerHour,
-    avgPerDay,
-    paymentDate: new Date().toLocaleDateString(),
-    attendanceRecords: attendance.map((a) => ({
-      date: new Date(a.work_date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" }),
-      hours: a.hours_worked
-    }))
-  });
-};
+    const employee = staffInfo.staff_name || "Unknown Employee";
+    const location = staffInfo.location_name || "Unknown Location";
 
-  const updateHours = async (id, hours) => {
-    await fetch("/.netlify/functions/updateAttendance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, hoursWorked: hours }),
+    generateWageStatement({
+      employeeName: employee,
+      location: location,
+      season: determineSeason(),
+      totalHours,
+      totalDays,
+      wagesPaid: payment?.total_payment || 0,
+      helpers: helpers || 0,
+      avgPerHour,
+      avgPerDay,
+      paymentDate: new Date().toLocaleDateString(),
+      attendanceRecords: attendance.map((a) => ({
+        date: new Date(a.work_date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" }),
+        hours: a.hours_worked
+      }))
     });
-    fetchAttendance();
   };
 
   return (
@@ -132,7 +122,8 @@ export default function Attendance() {
             </button>
             <button
               onClick={exportPDF}
-              className="text-xs text-green-600 border border-green-600 rounded px-2 py-1 hover:bg-green-50 transition"
+              disabled={!staffInfo.staff_name}
+              className="text-xs text-green-600 border border-green-600 rounded px-2 py-1 hover:bg-green-50 transition disabled:opacity-50"
             >
               Export Statement
             </button>
@@ -168,26 +159,6 @@ export default function Attendance() {
           </div>
         )}
       </div>
-
-      {editMode && (
-        <>
-          <h2 className="font-semibold mb-2 text-gray-700">Attendance Records:</h2>
-          <ul className="space-y-1">
-            {attendance.map((a) => (
-              <li key={a.id} className="border p-2 rounded bg-white shadow-sm flex justify-between items-center">
-                <span>{new Date(a.work_date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" })}</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={a.hours_worked}
-                  onChange={(e) => updateHours(a.id, parseInt(e.target.value, 10))}
-                  className="border rounded p-1 w-20 text-right"
-                />
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
     </div>
   );
 }
