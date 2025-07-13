@@ -1,5 +1,3 @@
-// 📄 Full Attendance.jsx with attendance list shown in edit mode
-
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Home, ArrowLeft } from "lucide-react";
@@ -15,8 +13,6 @@ export default function Attendance() {
   const [helpers, setHelpers] = useState(0);
   const [helpersInput, setHelpersInput] = useState("");
   const [editMode, setEditMode] = useState(false);
-  const [selectedSeason, setSelectedSeason] = useState("");
-  const [newAttendance, setNewAttendance] = useState([]);
 
   useEffect(() => {
     fetchAttendance();
@@ -58,8 +54,21 @@ export default function Attendance() {
         helpers: parseInt(helpersInput, 10) || 0
       }),
     });
+  };
+
+  const handleSaveAll = async () => {
+    await fetch("/.netlify/functions/updateAttendance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        staffId,
+        attendance: attendance.map(a => ({ date: a.work_date, hours: a.hours_worked }))
+      })
+    });
+
+    await savePayment();
     setEditMode(false);
-    fetchPayment();
+    fetchAttendance();
   };
 
   const determineSeason = () => {
@@ -77,9 +86,6 @@ export default function Attendance() {
   const avgPerHour = payment && totalHours > 0 ? (payment.total_payment / totalHours).toFixed(2) : 0;
   const avgPerDay = payment && totalDays > 0 ? (payment.total_payment / totalDays).toFixed(2) : 0;
 
-  const periodStart = attendance.length ? new Date(attendance[0].work_date).toLocaleDateString() : "";
-  const periodEnd = attendance.length ? new Date(attendance[attendance.length - 1].work_date).toLocaleDateString() : "";
-
   const exportPDF = () => {
     const employee = staffInfo.name || "Unknown Employee";
     const location = staffInfo.location_name || "Unknown Location";
@@ -92,39 +98,11 @@ export default function Attendance() {
       ratePerHour,
       totalHours,
       wagesPaid,
-      periodStart,
-      periodEnd,
-      paymentDate: new Date().toLocaleDateString(),
       attendanceRecords: attendance.map((a) => ({
         date: new Date(a.work_date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" }),
         hours: a.hours_worked
       }))
     });
-  };
-
-  const handleSaveMissingAttendance = async () => {
-    if (!selectedSeason || newAttendance.length === 0) {
-      alert("Please select a season and add at least one attendance record.");
-      return;
-    }
-
-    const payload = {
-      staffId,
-      season: selectedSeason,
-      records: newAttendance
-    };
-
-    await fetch("/.netlify/functions/updatePaymentSeasonAndAttendance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    setEditMode(false);
-    setNewAttendance([]);
-    setSelectedSeason("");
-    fetchAttendance();
-    fetchPayment();
   };
 
   return (
@@ -151,41 +129,23 @@ export default function Attendance() {
           </div>
         </div>
 
-        {editMode && attendance.length === 0 && (
-          <div className="mt-4 p-4 border rounded bg-white shadow-sm">
-            <h4 className="font-bold mb-2">Fix Missing Season and Attendance</h4>
-            <label className="block mb-2">
-              Select Season:
-              <select value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} className="border rounded p-1 ml-2">
-                <option value="">-- Choose --</option>
-                <option value={`July 4th ${new Date().getFullYear()} Season`}>July 4th {new Date().getFullYear()} Season</option>
-                <option value={`New Year ${new Date().getFullYear()} Season`}>New Year {new Date().getFullYear()} Season</option>
-                <option value="Custom">Custom...</option>
-              </select>
-            </label>
-            {selectedSeason === "Custom" && (
-              <input type="text" placeholder="Enter Season Name" value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} className="border p-1 rounded w-full mb-2" />
-            )}
-            <h5 className="font-semibold mt-2 mb-1">Enter Attendance Records:</h5>
-            {newAttendance.map((rec, idx) => (
-              <div key={idx} className="flex items-center space-x-2 mb-1">
-                <input type="date" value={rec.date} onChange={(e) => { const updated = [...newAttendance]; updated[idx].date = e.target.value; setNewAttendance(updated); }} className="border rounded p-1" />
-                <input type="number" value={rec.hours} onChange={(e) => { const updated = [...newAttendance]; updated[idx].hours = e.target.value; setNewAttendance(updated); }} className="border rounded p-1 w-20 text-right" placeholder="Hours" />
-                <button onClick={() => { const updated = [...newAttendance]; updated.splice(idx, 1); setNewAttendance(updated); }} className="text-red-500 text-xs">Remove</button>
-              </div>
-            ))}
-            <button onClick={() => setNewAttendance([...newAttendance, { date: "", hours: "" }])} className="text-xs text-indigo-600 border border-indigo-600 rounded px-2 py-1 hover:bg-indigo-50 transition mt-2">+ Add Date</button>
-            <button onClick={handleSaveMissingAttendance} className="mt-3 w-full px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">Save Season & Attendance</button>
-          </div>
-        )}
-
         {editMode && attendance.length > 0 && (
           <div className="mt-4 p-4 border rounded bg-white shadow-sm space-y-3">
-            <h4 className="font-bold mb-2">Existing Attendance Records</h4>
+            <h4 className="font-bold mb-2">Edit Attendance Records</h4>
             {attendance.map((rec, idx) => (
               <div key={idx} className="flex items-center space-x-2 text-sm">
                 <span className="w-40">{new Date(rec.work_date).toLocaleDateString()}</span>
-                <span>{rec.hours_worked} hours</span>
+                <input
+                  type="number"
+                  value={rec.hours_worked}
+                  onChange={(e) => {
+                    const updated = [...attendance];
+                    updated[idx].hours_worked = parseInt(e.target.value, 10) || 0;
+                    setAttendance(updated);
+                  }}
+                  className="border rounded p-1 w-20 text-right"
+                />
+                <span>hours</span>
               </div>
             ))}
 
@@ -198,7 +158,7 @@ export default function Attendance() {
                 <label>Helpers:</label>
                 <input type="number" value={helpersInput} onChange={(e) => setHelpersInput(e.target.value)} className="border rounded p-1 w-24 text-right" />
               </div>
-              <button onClick={savePayment} className="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">Save</button>
+              <button onClick={handleSaveAll} className="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">Save</button>
             </div>
           </div>
         )}
