@@ -79,7 +79,7 @@ export default function Attendance() {
   console.log("Current staffInfo before render:", staffInfo);
 
   const exportPDF = () => {
-    const employee = staffInfo.staff_name || "Unknown Employee";
+    const employee = staffInfo.name || "Unknown Employee";
     const location = staffInfo.location_name || "Unknown Location";
 
     generateWageStatement({
@@ -127,7 +127,7 @@ export default function Attendance() {
             </button>
             <button
               onClick={exportPDF}
-              disabled={!staffInfo.staff_name}
+              disabled={!staffInfo.name}
               className="text-xs text-green-600 border border-green-600 rounded px-2 py-1 hover:bg-green-50 transition disabled:opacity-50"
             >
               Export Statement
