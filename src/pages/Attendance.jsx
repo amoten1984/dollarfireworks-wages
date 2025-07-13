@@ -74,23 +74,27 @@ export default function Attendance() {
   const avgPerDay = payment && totalDays > 0 ? (payment.total_payment / totalDays).toFixed(2) : 0;
 
   const exportPDF = () => {
-    generateWageStatement({
-      employeeName: staffInfo.staff_name || "Employee",
-      location: staffInfo.location_name || "Unknown Location",
-      season: determineSeason(),
-      totalHours,
-      totalDays,
-      wagesPaid: payment?.total_payment || 0,
-      helpers: helpers || 0,
-      avgPerHour,
-      avgPerDay,
-      paymentDate: new Date().toLocaleDateString(),
-      attendanceRecords: attendance.map((a) => ({
-        date: new Date(a.work_date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" }),
-        hours: a.hours_worked
-      }))
-    });
-  };
+  if (!staffInfo.staff_name) {
+    alert("Employee info not loaded yet.");
+    return;
+  }
+  generateWageStatement({
+    employeeName: staffInfo.staff_name,
+    location: staffInfo.location_name || "Unknown Location",
+    season: determineSeason(),
+    totalHours,
+    totalDays,
+    wagesPaid: payment?.total_payment || 0,
+    helpers: helpers || 0,
+    avgPerHour,
+    avgPerDay,
+    paymentDate: new Date().toLocaleDateString(),
+    attendanceRecords: attendance.map((a) => ({
+      date: new Date(a.work_date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", weekday: "long" }),
+      hours: a.hours_worked
+    }))
+  });
+};
 
   const updateHours = async (id, hours) => {
     await fetch("/.netlify/functions/updateAttendance", {
