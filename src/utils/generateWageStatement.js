@@ -22,9 +22,8 @@ export function generateWageStatement({
   const companyPhone = '832-466-7251';
   const owner = 'Abdul Maqsood';
   const email = 'dollarfireworks@gmail.com';
-  const checkNumber = Math.floor(Math.random() * 900000 + 100000);  // random 6-digit check number
+  const checkNumber = Math.floor(Math.random() * 900000 + 100000);
 
-  // Header
   doc.setFontSize(18);
   doc.text('WAGE STATEMENT', 14, 20);
 
@@ -51,37 +50,35 @@ export function generateWageStatement({
 
   let y = doc.previousAutoTable.finalY + 20;
 
-  // Check-style layout
   doc.setFontSize(10);
-  doc.rect(14, y, 180, 60);  // Check border
+  doc.rect(14, y, 180, 60);
 
-  // Company info at top-left
   doc.text(companyName, 18, y + 6);
   doc.text(companyAddress, 18, y + 12);
   doc.text(`Phone: ${companyPhone}`, 18, y + 18);
   doc.text(`Owner: ${owner}`, 18, y + 24);
   doc.text(`Email: ${email}`, 18, y + 30);
 
-  // Check date + number at top-right
   doc.text(`Date: ${paymentDate}`, 150, y + 6);
   doc.text(`Check No: ${checkNumber}`, 150, y + 12);
 
-  // Payee line
   doc.text(`Pay to the Order of: ${employeeName}`, 18, y + 40);
 
-  // Amount line
-  const amountWords = numberToWords.toWords(wagesPaid);
-  const cents = (wagesPaid % 1).toFixed(2).split('.')[1];
-  const amountInWords = `${amountWords} and ${cents}/100 dollars`.replace(/^\w/, c => c.toUpperCase());
+  const amountWords = numberToWords.toWords(Math.floor(wagesPaid));
+  const cents = Math.round((wagesPaid % 1) * 100).toString().padStart(2, '0');
+  const amountInWords = `${amountWords.charAt(0).toUpperCase() + amountWords.slice(1)} and ${cents}/100 dollars`;
 
-  doc.text(`$${Number(wagesPaid).toFixed(2)}`, 150, y + 40, { align: 'right' });
+  doc.text(`$${Number(wagesPaid).toFixed(2)}`, 190, y + 40, { align: 'right' });
   doc.text(amountInWords, 18, y + 46);
 
-  // Signature line
   doc.line(120, y + 56, 190, y + 56);
-  doc.text('Authorized Signature', 140, y + 60);
+  doc.setFontSize(12);
+  doc.setFont("times", "italic");
+  doc.text("Abdul Maqsood", 155, y + 54, { align: "center" });
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text('Authorized Signature', 155, y + 60, { align: "center" });
 
-  // Optional watermark
   doc.setFontSize(8);
   doc.setTextColor(150);
   doc.text('NON-NEGOTIABLE', 100, y + 30, { align: 'center' });
