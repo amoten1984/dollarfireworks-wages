@@ -22,18 +22,17 @@ export function generateWageStatement({
   const companyPhone = '832-466-7251';
   const owner = 'Abdul Maqsood';
   const email = 'dollarfireworks@gmail.com';
+  const checkNumber = Math.floor(Math.random() * 900000 + 100000);  // random 6-digit check number
 
   // Header
   doc.setFontSize(18);
   doc.text('WAGE STATEMENT', 14, 20);
 
-  // Employee + Location info
   doc.setFontSize(12);
   doc.text(`Employee: ${employeeName}`, 14, 30);
   doc.text(`Location: ${location}`, 14, 36);
   doc.text(`Season: ${season}`, 14, 42);
 
-  // Summary on right
   const rightStart = 140;
   doc.text(`Total Hours: ${totalHours}`, rightStart, 30);
   doc.text(`Total Days: ${totalDays}`, rightStart, 36);
@@ -43,7 +42,6 @@ export function generateWageStatement({
   doc.text(`Avg $/Day: $${avgPerDay}`, rightStart, 60);
   doc.text(`Payment Date: ${paymentDate}`, rightStart, 66);
 
-  // Attendance Table
   autoTable(doc, {
     startY: 75,
     head: [['Date', 'Hours Worked']],
@@ -51,27 +49,42 @@ export function generateWageStatement({
     styles: { fontSize: 10 }
   });
 
-  // Check section
   let y = doc.previousAutoTable.finalY + 20;
-  doc.line(14, y, 200, y);
-  y += 6;
+
+  // Check-style layout
   doc.setFontSize(10);
-  doc.text('Non-negotiable: For information only', 14, y);
-  y += 6;
-  doc.text(`Pay to the Order of: ${employeeName}`, 14, y);
-  y += 6;
-  const wagesWords = numberToWords.toWords(wagesPaid);
-  doc.text(`Amount: $${wagesPaid} (${wagesWords} dollars)`, 14, y);
-  y += 6;
-  doc.text(companyName, 14, y);
-  y += 6;
-  doc.text(companyAddress, 14, y);
-  y += 6;
-  doc.text(`Phone: ${companyPhone}`, 14, y);
-  y += 6;
-  doc.text(`Owner: ${owner}`, 14, y);
-  y += 6;
-  doc.text(`Email: ${email}`, 14, y);
+  doc.rect(14, y, 180, 60);  // Check border
+
+  // Company info at top-left
+  doc.text(companyName, 18, y + 6);
+  doc.text(companyAddress, 18, y + 12);
+  doc.text(`Phone: ${companyPhone}`, 18, y + 18);
+  doc.text(`Owner: ${owner}`, 18, y + 24);
+  doc.text(`Email: ${email}`, 18, y + 30);
+
+  // Check date + number at top-right
+  doc.text(`Date: ${paymentDate}`, 150, y + 6);
+  doc.text(`Check No: ${checkNumber}`, 150, y + 12);
+
+  // Payee line
+  doc.text(`Pay to the Order of: ${employeeName}`, 18, y + 40);
+
+  // Amount line
+  const amountWords = numberToWords.toWords(wagesPaid);
+  const cents = (wagesPaid % 1).toFixed(2).split('.')[1];
+  const amountInWords = `${amountWords} and ${cents}/100 dollars`.replace(/^\w/, c => c.toUpperCase());
+
+  doc.text(`$${Number(wagesPaid).toFixed(2)}`, 150, y + 40, { align: 'right' });
+  doc.text(amountInWords, 18, y + 46);
+
+  // Signature line
+  doc.line(120, y + 56, 190, y + 56);
+  doc.text('Authorized Signature', 140, y + 60);
+
+  // Optional watermark
+  doc.setFontSize(8);
+  doc.setTextColor(150);
+  doc.text('NON-NEGOTIABLE', 100, y + 30, { align: 'center' });
 
   doc.save(`${employeeName}_${season}_Statement.pdf`);
 }
