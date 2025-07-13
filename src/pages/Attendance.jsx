@@ -31,7 +31,7 @@ export default function Attendance() {
     const data = await res.json();
     if (data) {
       setPayment(data);
-      setPaymentInput(data.total_amount);
+      setPaymentInput(data.total_payment);
       setHelpers(data.helpers || 0);
       setHelpersInput(data.helpers || "");
     }
@@ -70,8 +70,8 @@ export default function Attendance() {
 
   const totalHours = attendance.reduce((sum, rec) => sum + rec.hours_worked, 0);
   const totalDays = new Set(attendance.map((a) => a.work_date)).size;
-  const avgPerHour = payment && totalHours > 0 ? (payment.total_amount / totalHours).toFixed(2) : 0;
-  const avgPerDay = payment && totalDays > 0 ? (payment.total_amount / totalDays).toFixed(2) : 0;
+  const avgPerHour = payment && totalHours > 0 ? (payment.total_payment / totalHours).toFixed(2) : 0;
+  const avgPerDay = payment && totalDays > 0 ? (payment.total_payment / totalDays).toFixed(2) : 0;
 
   const exportPDF = () => {
     generateWageStatement({
@@ -80,7 +80,7 @@ export default function Attendance() {
       season: determineSeason(),
       totalHours,
       totalDays,
-      wagesPaid: payment?.total_amount || 0,
+      wagesPaid: payment?.total_payment || 0,
       helpers: helpers || 0,
       avgPerHour,
       avgPerDay,
@@ -114,7 +114,7 @@ export default function Attendance() {
             <div className="font-bold text-indigo-600 mb-2">{determineSeason()}</div>
             <div>Total Hours: <strong>{totalHours}</strong></div>
             <div>Total Days: <strong>{totalDays}</strong></div>
-            <div>Wages Paid: <strong>${payment ? payment.total_amount : 0}</strong></div>
+            <div>Wages Paid: <strong>${payment ? payment.total_payment : 0}</strong></div>
             <div>Helpers: <strong>{helpers}</strong></div>
             <div>Avg $/Hour: <strong>${avgPerHour}</strong></div>
             <div>Avg $/Day: <strong>${avgPerDay}</strong></div>
