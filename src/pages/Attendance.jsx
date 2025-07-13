@@ -1,4 +1,4 @@
-// 📄 Attendance.jsx (ready-to-go full file with season-aware attendance edit/fix)
+// 📄 Full Attendance.jsx with attendance list shown in edit mode
 
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
@@ -129,7 +129,6 @@ export default function Attendance() {
 
   return (
     <div className="min-h-screen p-6 bg-gray-100 text-sm">
-      {/* Navigation */}
       <div className="flex items-center space-x-4 mb-4">
         <button onClick={() => navigate(-1)} className="hover:text-indigo-600"><ArrowLeft size={20} /></button>
         <Link to="/" className="hover:text-indigo-600"><Home size={20} /></Link>
@@ -164,11 +163,9 @@ export default function Attendance() {
                 <option value="Custom">Custom...</option>
               </select>
             </label>
-
             {selectedSeason === "Custom" && (
               <input type="text" placeholder="Enter Season Name" value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} className="border p-1 rounded w-full mb-2" />
             )}
-
             <h5 className="font-semibold mt-2 mb-1">Enter Attendance Records:</h5>
             {newAttendance.map((rec, idx) => (
               <div key={idx} className="flex items-center space-x-2 mb-1">
@@ -177,23 +174,32 @@ export default function Attendance() {
                 <button onClick={() => { const updated = [...newAttendance]; updated.splice(idx, 1); setNewAttendance(updated); }} className="text-red-500 text-xs">Remove</button>
               </div>
             ))}
-
             <button onClick={() => setNewAttendance([...newAttendance, { date: "", hours: "" }])} className="text-xs text-indigo-600 border border-indigo-600 rounded px-2 py-1 hover:bg-indigo-50 transition mt-2">+ Add Date</button>
             <button onClick={handleSaveMissingAttendance} className="mt-3 w-full px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">Save Season & Attendance</button>
           </div>
         )}
 
         {editMode && attendance.length > 0 && (
-          <div className="mt-3 flex flex-col space-y-2">
-            <div className="flex items-center space-x-2">
-              <label>Wages Paid:</label>
-              <input type="number" value={paymentInput} onChange={(e) => setPaymentInput(e.target.value)} className="border rounded p-1 w-24 text-right" />
+          <div className="mt-4 p-4 border rounded bg-white shadow-sm space-y-3">
+            <h4 className="font-bold mb-2">Existing Attendance Records</h4>
+            {attendance.map((rec, idx) => (
+              <div key={idx} className="flex items-center space-x-2 text-sm">
+                <span className="w-40">{new Date(rec.work_date).toLocaleDateString()}</span>
+                <span>{rec.hours_worked} hours</span>
+              </div>
+            ))}
+
+            <div className="flex flex-col space-y-2 mt-4">
+              <div className="flex items-center space-x-2">
+                <label>Wages Paid:</label>
+                <input type="number" value={paymentInput} onChange={(e) => setPaymentInput(e.target.value)} className="border rounded p-1 w-24 text-right" />
+              </div>
+              <div className="flex items-center space-x-2">
+                <label>Helpers:</label>
+                <input type="number" value={helpersInput} onChange={(e) => setHelpersInput(e.target.value)} className="border rounded p-1 w-24 text-right" />
+              </div>
+              <button onClick={savePayment} className="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">Save</button>
             </div>
-            <div className="flex items-center space-x-2">
-              <label>Helpers:</label>
-              <input type="number" value={helpersInput} onChange={(e) => setHelpersInput(e.target.value)} className="border rounded p-1 w-24 text-right" />
-            </div>
-            <button onClick={savePayment} className="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">Save</button>
           </div>
         )}
 
