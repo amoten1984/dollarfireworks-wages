@@ -10,10 +10,9 @@ export default function Attendance() {
   const [payment, setPayment] = useState(null);
   const [staffInfo, setStaffInfo] = useState({});
   const [paymentInput, setPaymentInput] = useState("");
+  const [helpers, setHelpers] = useState(0);
   const [helpersInput, setHelpersInput] = useState("");
   const [editMode, setEditMode] = useState(false);
-  const [selectedSeason, setSelectedSeason] = useState("");
-  const [newAttendance, setNewAttendance] = useState([{ date: "", hours: 0 }]);
 
   useEffect(() => {
     fetchAttendance();
@@ -33,6 +32,7 @@ export default function Attendance() {
     if (data) {
       setPayment(data);
       setPaymentInput(data.total_payment);
+      setHelpers(data.helpers || 0);
       setHelpersInput(data.helpers || "");
     }
   };
@@ -49,7 +49,7 @@ export default function Attendance() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         staffId,
-        season: selectedSeason || determineSeason(),
+        season: determineSeason(),
         totalAmount: parseFloat(paymentInput),
         helpers: parseInt(helpersInput, 10) || 0
       }),
@@ -65,20 +65,7 @@ export default function Attendance() {
         attendance: attendance.map(a => ({ date: a.work_date, hours: a.hours_worked }))
       })
     });
-    await savePayment();
-    setEditMode(false);
-    fetchAttendance();
-  };
 
-  const handleSaveMissingAttendance = async () => {
-    await fetch("/.netlify/functions/updateAttendance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        staffId,
-        attendance: newAttendance.filter(a => a.date && a.hours > 0).map(a => ({ date: a.date, hours: a.hours }))
-      })
-    });
     await savePayment();
     setEditMode(false);
     fetchAttendance();
@@ -132,7 +119,7 @@ export default function Attendance() {
             <div>Total Hours: <strong>{totalHours}</strong></div>
             <div>Total Days: <strong>{totalDays}</strong></div>
             <div>Wages Paid: <strong>${payment ? payment.total_payment : 0}</strong></div>
-            <div>Helpers: <strong>{payment ? payment.helpers : 0}</strong></div>
+            <div>Helpers: <strong>{helpers}</strong></div>
             <div>Avg $/Hour: <strong>${avgPerHour}</strong></div>
             <div>Avg $/Day: <strong>${avgPerDay}</strong></div>
           </div>
@@ -161,6 +148,7 @@ export default function Attendance() {
                 <span>hours</span>
               </div>
             ))}
+
             <div className="flex flex-col space-y-2 mt-4">
               <div className="flex items-center space-x-2">
                 <label>Wages Paid:</label>
@@ -175,55 +163,6 @@ export default function Attendance() {
           </div>
         )}
 
-        {editMode && attendance.length === 0 && (
-          <div className="mt-4 p-4 border rounded bg-white shadow-sm space-y-3">
-            <h4 className="font-bold mb-2">Add Missing Season & Attendance</h4>
-            <label className="block mb-2">
-              Select Season:
-              <select value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} className="border rounded p-1 ml-2">
-                <option value="">-- Choose --</option>
-                <option value={`July 4th ${new Date().getFullYear()} Season`}>July 4th {new Date().getFullYear()} Season</option>
-                <option value={`New Year ${new Date().getFullYear()} Season`}>New Year {new Date().getFullYear()} Season</option>
-                <option value="Custom">Custom...</option>
-              </select>
-            </label>
-            {selectedSeason === "Custom" && (
-              <input type="text" placeholder="Enter Season Name" value={selectedSeason} onChange={(e) => setSelectedSeason(e.target.value)} className="border p-1 rounded w-full mb-2" />
-            )}
-            <h5 className="font-semibold mt-2 mb-1">Attendance Records:</h5>
-            {newAttendance.map((rec, idx) => (
-              <div key={idx} className="flex items-center space-x-2 mb-1">
-                <input type="date" value={rec.date} onChange={(e) => {
-                  const updated = [...newAttendance];
-                  updated[idx].date = e.target.value;
-                  setNewAttendance(updated);
-                }} className="border rounded p-1" />
-                <input type="number" value={rec.hours} onChange={(e) => {
-                  const updated = [...newAttendance];
-                  updated[idx].hours = parseInt(e.target.value, 10) || 0;
-                  setNewAttendance(updated);
-                }} className="border rounded p-1 w-20 text-right" placeholder="Hours" />
-                <button onClick={() => {
-                  const updated = [...newAttendance];
-                  updated.splice(idx, 1);
-                  setNewAttendance(updated);
-                }} className="text-red-500 text-xs">Remove</button>
-              </div>
-            ))}
-            <button onClick={() => setNewAttendance([...newAttendance, { date: '', hours: 0 }])} className="text-xs text-indigo-600 border border-indigo-600 rounded px-2 py-1 hover:bg-indigo-50 transition mt-2">+ Add Date</button>
-            <div className="flex flex-col space-y-2 mt-4">
-              <div className="flex items-center space-x-2">
-                <label>Wages Paid:</label>
-                <input type="number" value={paymentInput} onChange={(e) => setPaymentInput(e.target.value)} className="border rounded p-1 w-24 text-right" />
-              </div>
-              <div className="flex items-center space-x-2">
-                <label>Helpers:</label>
-                <input type="number" value={helpersInput} onChange={(e) => setHelpersInput(e.target.value)} className="border rounded p-1 w-24 text-right" />
-              </div>
-              <button onClick={handleSaveMissingAttendance} className="mt-3 w-full px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">Save Season & Attendance</button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
