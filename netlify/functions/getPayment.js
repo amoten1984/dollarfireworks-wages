@@ -1,3 +1,4 @@
+
 import { Client } from "pg";
 
 export async function handler(event, context) {
@@ -19,9 +20,9 @@ export async function handler(event, context) {
         id,
         staff_id,
         season,
-        total_amount AS total_payment,  -- ✅ fix alias
+        total_amount AS total_payment,
         helpers,
-        COALESCE(payment_date, NOW()) AS payment_date  -- Optional: add if you want safe fallback for date
+        COALESCE(payment_date, NOW()) AS payment_date
       FROM payments
       WHERE staff_id = $1
       ORDER BY id DESC
